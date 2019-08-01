@@ -50,30 +50,58 @@ section of our README.
 from datetime import datetime
 from googleads import adwords
 
+import google.ads.google_ads.client
 
 def main(req):
-  # Initialize appropriate service.
-  adwords_client = adwords.AdWordsClient.LoadFromStorage()
-  managed_customer_service = client.GetService(
-      'ManagedCustomerService', version='v201809')
+   
+    client = (google.ads.google_ads.client.GoogleAdsClient.load_from_storage())
+    customer_service = client.get_service('CustomerService', version='v1')
+    customer = client.get_type('Customer', version='v1')
+    today = datetime.today().strftime('%Y%m%d %H:%M:%S')
+    customer.descriptive_name.value = ('Account created with '
+                                       'CustomerService on %s' % today)
+    # For a list of valid currency codes and time zones see this documentation:
+    # https://developers.google.com/adwords/api/docs/appendix/codes-formats
+    customer.currency_code.value = 'CAD'
+    customer.time_zone.value = 'America/New_York'
+    # The below values are optional. For more information about URL
+    # options see: https://support.google.com/google-ads/answer/6305348
+    customer.tracking_url_template.value = '{lpurl}?device={device}'
+    customer.final_url_suffix.value = ('keyword={keyword}&matchtype={matchtype}'
+                                       '&adgroupid={adgroupid}')
+    customer.has_partners_badge.value = False
 
-  today = datetime.today().strftime('%Y%m%d %H:%M:%S')
-  # Construct operations and add campaign.
-  operations = [{
-      'operator': 'ADD',
-      'operand': {
-          'name': req['account_name'],
-          'currencyCode': req['currency_code'],
-          'dateTimeZone': req['time_zone'],
-      }
-  }]
+    try:
+        response = customer_service.create_customer_client(
+           req['manager_customer_id'] , customer)
+        print(('Customer created with resource name "%s" under manager account '
+               'with customer ID "%s"') %
+               (response.resource_name, req['manager_customer_id']))
+        result = {}
+        result['customer_id'] = (response.resource_name)[10:]
+        return result
+    except google.ads.google_ads.errors.GoogleAdsException as ex:
+        print('Request with ID "%s" failed with status "%s" and includes the '
+              'following errors:' % (ex.request_id, ex.error.code().name))
+        for error in ex.failure.errors:
+            print('\tError with message "%s".' % error.message)
+            if error.location:
+                for field_path_element in error.location.field_path_elements:
+                    print('\t\tOn field: %s' % field_path_element.field_name)
+        sys.exit(1)
 
-  # Create the account. It is possible to create multiple accounts with one
-  # request by sending an array of operations.
-  accounts = managed_customer_service.mutate(operations)
 
-  # Display results.
-  for account in accounts['value']:
-    print ('Account with customer ID "%s" was successfully created.'
-           % account['customerId'])
-  return account['customerId']
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
