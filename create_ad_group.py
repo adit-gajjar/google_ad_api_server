@@ -196,7 +196,6 @@ def main(req):
   ad_groups = ad_group_service.mutate(operations)
 
 
-  
   ad_group_id = ""
   # Display results.
   for ad_group in ad_groups['value']:
@@ -204,42 +203,32 @@ def main(req):
            % (ad_group['name'], ad_group['id']))
     ad_group_id = ad_group['id']
 
-  try:
+  
 
-    criteria_list = []
+  criteria_list = []
 
     # demographic criteria
-    add_age_criteria(req['age'], criteria_list, ad_group_id)
-    add_gender_criteria(req['gender'], criteria_list, ad_group_id)
-    add_house_hold_income_criteria(req['house_hold_income'], criteria_list, ad_group_id)
+  add_age_criteria(req['age'], criteria_list, ad_group_id)
+  add_gender_criteria(req['gender'], criteria_list, ad_group_id)
+  add_house_hold_income_criteria(req['house_hold_income'], criteria_list, ad_group_id)
     #add_parental_status_criteria(req['parental_status'], criteria_list, ad_group_id)
 
     # content targeting criteria
-    add_keywords_criteria(req['keywords'], criteria_list, ad_group_id)
+  add_keywords_criteria(req['keywords'], criteria_list, ad_group_id)
 
     #add_audience_criteria(req['audience'], criteria_list, ad_group_id)
     #add_topic_criteria(req['topics'], criteria_list, ad_group_id)
     #add_placement_criteria(req['placement'], criteria_list, ad_group_id)
-    print(len(criteria_list))
-    operations = []
-    for criterion in criteria_list:
-        operations.append({
-            'operator': 'ADD',
-            'operand': criterion
-        })
+  print(len(criteria_list))
+  operations = []
+  for criterion in criteria_list:
+    operations.append({
+        'operator': 'ADD',
+        'operand': criterion
+    })
 
-    #response = ad_group_criterion_service.mutate(operations)
-    ad_group_criteria = ad_group_criterion_service.mutate(operations)['value']
-
-  except google.ads.google_ads.errors.GoogleAdsException as ex:
-    print('Request with ID "%s" failed with status "%s" and includes the '
-              'following errors:' % (ex.request_id, ex.error.code().name))
-    for error in ex.failure.errors:
-        print('\tError with message "%s".' % error.message)
-        if error.location:
-            for field_path_element in error.location.field_path_elements:
-                print('\t\tOn field: %s' % field_path_element.field_name)
-            sys.exit(1)
+  #response = ad_group_criterion_service.mutate(operations)
+  ad_group_criterion_service.mutate(operations)['value']
   return {'ad_group_id': ad_group_id}
 
 

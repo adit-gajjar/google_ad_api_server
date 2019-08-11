@@ -79,9 +79,17 @@ def main(req):
   client = adwords.AdWordsClient.LoadFromStorage()
   client.client_customer_id = int(req['customer_id']) 
   ad_group_ad_service = client.GetService('AdGroupAdService', version='v201809')
-  print(req['image'])
   image = "http://0.0.0.0:3000/" + req['image']
+  square_image = "http://0.0.0.0:3000/" + req['square_image']
+  logo_image = "http://0.0.0.0:3000/" + req['logo_image']
+  #landscape_image = "http://0.0.0.0:3000/" + req['landscape_image']
   main_image_id = UploadImageAsset(client, image)
+  square_image_id = UploadImageAsset(client, square_image)
+  logo_image_id = UploadImageAsset(client, logo_image)[0],
+  #landscape_image_id = UploadImageAsset(client, landscape_image)
+  print(main_image_id)
+  print(square_image_id)
+  print(logo_image_id)
   # Create the ad.
   multi_asset_responsive_display_ad = {
       'xsi_type': 'MultiAssetResponsiveDisplayAd',
@@ -132,7 +140,7 @@ def main(req):
       'squareMarketingImages': [{
           'asset': {
               'xsi_type': 'ImageAsset',
-              'assetId': UploadImageAsset(client, 'https://goo.gl/mtt54n')[0]
+              'assetId': square_image_id[0]
           }
       }],
       # Optional values
@@ -152,7 +160,7 @@ def main(req):
       'logoImages': [{
           'asset': {
               'xsi_type': 'ImageAsset',
-              'assetId': UploadImageAsset(client, 'https://goo.gl/mtt54n')[0]
+              'assetId': logo_image_id[0]
           }
       }]
   }

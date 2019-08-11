@@ -30,6 +30,7 @@ import uuid
 from googleads import adwords
 import add_conversion_tracker
 import location_track
+
   
 def CreateBiddingStrategy(client, bidding_strategy, amount):
   """Creates a bidding strategy object.
@@ -133,15 +134,18 @@ def main(req):
       bidding_obj = {'biddingStrategyId': bidding_strategy_id}
       result['bidding_strategy_id'] = bidding_strategy_id
 
+
+
+
   operations = [{
       'operator': 'ADD',
       'operand': {
-          'name': req['name'],
+          'name': req['name'] + '/SEARCH' + '/' + req['celes_campaign_id'],
           # Recommendation: Set the campaign to PAUSED when creating it to
           # stop the ads from immediately serving. Set to ENABLED once you've
           # added targeting and the ads are ready to serve.
           'status': 'PAUSED',
-          'advertisingChannelType': req['type'],
+          'advertisingChannelType': 'SEARCH',
           'biddingStrategyConfiguration': bidding_obj,
           'endDate': datetime.date(req['end_year'], req['end_month'], req['end_day']),
           # Note that only the budgetId is required
@@ -171,11 +175,51 @@ def main(req):
           ]
       }
   }]
-  if (req['type'] == "DISPLAY"):
+
+  operations.append({
+      'operator': 'ADD',
+      'operand': {
+          'name': req['name'] + "/DISPLAY" +'/' + req['celes_campaign_id'],
+          # Recommendation: Set the campaign to PAUSED when creating it to
+          # stop the ads from immediately serving. Set to ENABLED once you've
+          # added targeting and the ads are ready to serve.
+          'status': 'PAUSED',
+          'advertisingChannelType': 'DISPLAY',
+          'biddingStrategyConfiguration': bidding_obj,
+          'endDate': datetime.date(req['end_year'], req['end_month'], req['end_day']),
+          # Note that only the budgetId is required
+          'budget': {
+              'budgetId': budget_id
+          },
+          'networkSetting': {
+              'targetGoogleSearch': 'true',
+              'targetSearchNetwork': 'true',
+              'targetContentNetwork': 'false',
+              'targetPartnerSearchNetwork': 'false'
+          },
+          # 'adServingOptimizationStatus': req['adServingOptimization'],
+          # Optional fields
+          'startDate': datetime.date(req['start_year'], req['start_month'], req['start_day']),
+          'frequencyCap': {
+              'impressions': '5',
+              'timeUnit': 'DAY',
+              'level': 'ADGROUP'
+          },
+          'settings': [
+              {
+                  'xsi_type': 'GeoTargetTypeSetting',
+                  'positiveGeoTargetType': 'DONT_CARE',
+                  'negativeGeoTargetType': 'DONT_CARE'
+              }
+          ]
+      }
+  })
+
+  if (True):
       print("display campaign created")
-      operations[0]['operand']['networkSetting']['targetGoogleSearch'] = 'false'
-      operations[0]['operand']['networkSetting']['targetSearchNetwork'] = 'false'
-      operations[0]['operand']['networkSetting']['targetContentNetwork'] = 'true'
+      operations[1]['operand']['networkSetting']['targetGoogleSearch'] = 'false'
+      operations[1]['operand']['networkSetting']['targetSearchNetwork'] = 'false'
+      operations[1]['operand']['networkSetting']['targetContentNetwork'] = 'true'
   
 
   trackers = add_conversion_tracker.main(req)
@@ -183,17 +227,21 @@ def main(req):
   campaigns = campaign_service.mutate(operations)
 
   # Display results.
-  
-  campaign_id = ''
+  location_id_list = location_track.main(req['locations'])
+
   for campaign in campaigns['value']:
     print ('Campaign with name "%s" and id "%s" was added.' % (campaign['name'], campaign['id']))
-    campaign_id = campaign['id']
-    result['campaign_id'] = campaign['id']
+    if "/DISPLAY" in campaign['name']:
+        result['display_campaign_id'] = campaign['id']
+    else:
+        
+        result['campaign_id'] = campaign['id']
+    if location_id_list is not None:
+        add_location_criterion(location_id_list, campaign['id'], client)
   
-  location_id_list = location_track.main(req['locations'])
+  
   print(req['locations'][0])
-  if (location_id_list is not None):
-    add_location_criterion(location_id_list, campaign_id, client)
+  
 
 
 
@@ -222,12 +270,13 @@ def add_location_criterion(location_id_list, campaignId, client):
             }
         })
     # Make the mutate request.
-    result = campaign_criterion_service.mutate(operations)
+    if (len(operations) > 0):
+        result = campaign_criterion_service.mutate(operations)
 
   # Display the resulting campaign criteria.
-    for campaign_criterion in result['value']:
-        print ('Campaign criterion with campaign id "%s", criterion id "%s", '
-            'and type "%s" was added.'
-            % (campaign_criterion['campaignId'],
-                campaign_criterion['criterion']['id'],
-                campaign_criterion['criterion']['type']))
+    # for campaign_criterion in result['value']:
+    #     print ('Campaign criterion with campaign id "%s", criterion id "%s", '
+    #         'and type "%s" was added.'
+    #         % (campaign_criterion['campaignId'],
+    #             campaign_criterion['criterion']['id'],
+    #             campaign_criterion['criterion']['type']))

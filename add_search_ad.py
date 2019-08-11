@@ -69,3 +69,4 @@ def main(req):
            % (ad['ad']['Ad.Type'], ad['ad']['id'],
               ad['ad']['headlinePart1'], ad['ad']['headlinePart2'],
               ad['ad']['headlinePart3']))
+  return {}
