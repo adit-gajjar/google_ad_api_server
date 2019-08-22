@@ -106,10 +106,13 @@ def main(req):
   #bidding_strategy_id = bidding_strategy['id']
 
   # Create a budget, which can be shared by multiple campaigns.
+
+  amount = str(10000 * req['budget'])
+
   budget = {
       'name': '%s budget' % uuid.uuid4(),
       'amount': {
-          'microAmount': '50000000'
+          'microAmount': amount
       },
       'deliveryMethod': 'STANDARD'
   }
